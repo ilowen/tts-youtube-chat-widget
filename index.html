@@ -1,0 +1,143 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tadpoles</title>
+
+
+    <script type="text/javascript" src="reconnecting-websocket.min.js"></script>
+    <script src="howler.core.min.js"></script>
+    <script type="text/javascript" >
+        // Adapted from Flocking Processing example by Daniel Schiffman:
+        // http://processing.org/learning/topics/flocking.html
+
+        basespund="";
+        window.onload = function() {
+
+          start();
+        };
+
+        function timeout(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+
+        async function start(){
+            let CHID=(new URL(window.location)).searchParams.get("CHID")||0;
+            let APIKEY=(new URL(window.location)).searchParams.get("APIKEY")||0;
+            var HOST = location.origin.replace(/^http/, 'ws');
+            const socket = new ReconnectingWebSocket(HOST);
+
+            // Connection opened
+            socket.addEventListener('open', function (event) {
+              socket.send(JSON.stringify({CHID, APIKEY}));
+            });
+
+            var audiohbeat = null;
+            Howl.prototype.changeSrc = function (newSrc) {
+            //    console.log('add track');
+                let self = this;
+                self.unload();
+                self._src = newSrc;
+                self.load();
+                //self.play();
+            };
+            let voices =[];
+            // Listen for messages
+            socket.addEventListener('message',async function (event) {
+              //"{\"pedometer\":{\"stepStatus\":\"NOT_MOVING\",\"cumulativeTotalStepCount\":52},\"timestamp\":1617797909827}"
+              //console.log('Message from server ', event.data);
+
+              if (event.data == "noBroadcast")
+                 return setTimeout(()=>socket.send(JSON.stringify({CHATID, APIKEY})));
+              try{
+
+                basespund = `data:audio/mp3;base64,${event.data}`;
+                voices.push(basespund);
+              //  console.log(audiohbeat,voices.length)
+                if(!audiohbeat){
+                  audiohbeat = new Howl({
+                    src: voices.shift(),
+                    autoplay: true,
+                     loop: false,
+                     volume: 1,
+                     rate:1.2
+                  })
+                  audiohbeat.on('end', function (){
+                   console.log('end',voices.length);
+                    if(!voices.length){
+                        audiohbeat.unload();
+                        delete audiohbeat;
+                      return false;
+                    }
+                    setTimeout(()=>audiohbeat.changeSrc(voices.shift()),1500)
+                     
+                  })
+                  audiohbeat.on('load', function (){
+                    console.log('load',voices.length);
+                    audiohbeat.play();
+                  })
+                  return null;
+                }
+                if (!audiohbeat.playing()){
+                    console.log('load',voices.length);
+                    audiohbeat.changeSrc(voices.shift());
+                }
+
+
+                //  audiohbeat.play();
+
+              }catch(e){
+                  console.error(e)
+              }
+
+
+            });
+
+
+
+
+        }
+    </script>
+
+
+
+
+    <style>
+      @font-face {
+       font-family: "Galiver";
+       src: url("/src/css/galiver.ttf")
+      }
+        body {
+          background:transparent;
+            overflow: hidden;
+        }
+         canvas[resize] {
+           position: absolute;
+            width: 500px;
+
+            height: 340px;
+        }
+        #auctionView{
+          background: rgba(0, 0, 0, 0.6);
+          font-family: Galiver;
+          color: white;
+          padding: 20px;
+          width: 300px;
+          text-shadow: 0 0 5px black;
+          letter-spacing: 1.5;
+        }
+        h2,h3{
+          color:#f75d00;
+
+        }
+
+        i{
+          color:rgba(255, 255, 255, 0.7);
+        }
+
+    </style>
+</head>
+<body>
+
+</body>
+</html>

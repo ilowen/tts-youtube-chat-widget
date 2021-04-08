@@ -48,7 +48,7 @@
               //console.log('Message from server ', event.data);
 
               if (event.data == "noBroadcast")
-                 return setTimeout(()=>socket.send(JSON.stringify({CHATID, APIKEY})));
+                 return setTimeout(()=>socket.send(JSON.stringify({CHID, APIKEY})),30000);
               try{
 
                 basespund = `data:audio/mp3;base64,${event.data}`;
@@ -70,7 +70,7 @@
                       return false;
                     }
                     setTimeout(()=>audiohbeat.changeSrc(voices.shift()),1500)
-                     
+
                   })
                   audiohbeat.on('load', function (){
                     console.log('load',voices.length);

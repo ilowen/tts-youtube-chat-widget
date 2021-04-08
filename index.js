@@ -63,7 +63,6 @@ wss.on('connection', async function  connection(ws) {
       if (chatMessage.snippet.type === 'textMessageEvent') {
 
         let msg = `${chatMessage.authorDetails.displayName}: ${chatMessage.snippet.displayMessage}`;
-         msg = "Gauss Hunter ​его работы живы вечно..и его открытиями мы пользуемся..так что он жив​его работы живы вечно..и его открытиями мы пользуемся..так что он жив​его работы живы вечно..и его работы живы вечн";
       //
         let voice = await googleTTS.getAudioBase64(msg<200?msg:msg.substring(0, 200), {
             lang: 'ru',

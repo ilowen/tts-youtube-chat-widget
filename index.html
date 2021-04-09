@@ -48,10 +48,11 @@
               //console.log('Message from server ', event.data);
 
               if (event.data == "noBroadcast")
-                 return setTimeout(()=>socket.send(JSON.stringify({CHID, APIKEY})),30000);
+                 return setTimeout(()=>socket.send(JSON.stringify({CHID, APIKEY})),10000);
               try{
-
-                basespund = `data:audio/mp3;base64,${event.data}`;
+                data = JSON.parse(event.data);
+                console.log(data.text)
+                basespund = `data:audio/mp3;base64,${data.voice}`;
                 voices.push(basespund);
               //  console.log(audiohbeat,voices.length)
                 if(!audiohbeat){
@@ -69,7 +70,7 @@
                         delete audiohbeat;
                       return false;
                     }
-                    setTimeout(()=>audiohbeat.changeSrc(voices.shift()),1500)
+                    setTimeout(()=>audiohbeat.changeSrc(voices.shift()),0)
 
                   })
                   audiohbeat.on('load', function (){

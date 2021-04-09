@@ -3,6 +3,7 @@ const http = require('http')
 const WebSocket = require('ws')
 const {YouTubeLiveChat}  = require('./YTLICH.js');
 const googleTTS = require('google-tts-api'); // CommonJS
+const axios = require("axios");
 
 const PORT = process.env.PORT || 8080;
 const INDEX = '/index.html';
@@ -31,7 +32,6 @@ function heartbeat() {
 //http://localhost:8080/?CHID=UCggHHzddjVYUwb4Uc4bO_cg&APIKEY=AIzaSyDJ42V4HKYRMJKQhtbclC_Stxsmnj9sCD8
 
 
-
 wss.on('connection', async function  connection(ws) {
   ws.isAlive = true;
   ws.on('pong', heartbeat);
@@ -41,15 +41,17 @@ wss.on('connection', async function  connection(ws) {
     const handler = new YouTubeLiveChat(data.APIKEY);
     const currentLiveStreams = await handler.searchChannelForLiveVideoIds(data.CHID);
 
+
     if(!currentLiveStreams.length)
       return console.log(`${message} no Live broadcast`),ws.send('noBroadcast');
     console.log(`${data.CHID} started`);
+    ws.chatListen=true;
     const videoId = currentLiveStreams[0];
     const liveChatId = await handler.getLiveChatIdFromVideoId(videoId);
 
     const interval = setInterval(function ping() {
 
-        if (ws.isAlive === false) return ws.terminate(),clearInterval(interval);
+        if (ws.isAlive === false) return ws.chatListen=false,ws.terminate(),clearInterval(interval);;
 
         ws.isAlive = false;
         ws.ping(noop);
@@ -62,15 +64,22 @@ wss.on('connection', async function  connection(ws) {
 
       if (chatMessage.snippet.type === 'textMessageEvent') {
 
-        let msg = `${chatMessage.authorDetails.displayName}: ${chatMessage.snippet.displayMessage}`;
-      //
-        let voice = await googleTTS.getAudioBase64(msg<200?msg:msg.substring(0, 200), {
-            lang: 'ru',
-            slow: false,
-            host: 'https://translate.google.com',
-            timeout: 30000,
-          })
-          ws.send(voice);
+        let text = `${chatMessage.authorDetails.displayName}: ${chatMessage.snippet.displayMessage}`;
+        //text = text<200?text:text.substring(0, 200);
+
+        const url = googleTTS.getAudioUrl( text , {
+          lang: 'ru',
+          slow: false,
+          host: 'https://translate.google.com',
+        });
+        //console.log(url);
+        var voice =  await  axios
+            .get(url, {
+                responseType: 'arraybuffer'
+            })
+            .then(response =>  new Buffer.from(response.data, 'binary').toString('base64'))
+
+          ws.send(JSON.stringify({voice, text}));
       }
     });
 

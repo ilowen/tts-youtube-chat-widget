@@ -23,7 +23,12 @@ const LIVE_CHAT_MESSAGES_URL = 'https://www.googleapis.com/youtube/v3/liveChat/m
 const LIVE_CHAT_MESSAGES_LIST_QUOTA = 5; // This was determined to be correct via experimentation on 10/7/20
 const LIVE_CHAT_MESSAGE_QUOTA_PER_ITEM = 0; // This *should* be 0, but it's here in case it's not.
 const MAX_MAX_RESULTS = 2000;
-const MIN_REQUEST_DELAY = 5000;
+const MIN_REQUEST_DELAY = 10000;
+
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 class YouTubeLiveChat {
     constructor(apiKey) {
         this.apiKey = apiKey;
@@ -83,7 +88,7 @@ class YouTubeLiveChat {
     listen(liveChatId) {
         if (!YouTubeLiveChat.subjectCache[liveChatId]) {
             YouTubeLiveChat.subjectCache[liveChatId] = new rxjs_1.Subject();
-            const resultsFetchLoop = (result) => {
+            const resultsFetchLoop = async (result) => {
                 if (YouTubeLiveChat.subjectCache[liveChatId].isStopped) {
                     return delete YouTubeLiveChat.subjectCache[liveChatId];
                 }
@@ -103,6 +108,7 @@ class YouTubeLiveChat {
                         if (message.snippet.type === 'chatEndedEvent') {
                             chatEndedFlag = true;
                         }
+                        await timeout(5000);
                     }
                     if (result.offlineAt || chatEndedFlag) {
                         this.stop(liveChatId);
